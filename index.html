@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đội Ngũ Của Chúng Tôi | Team Showcase</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#111111',
+              charcoal: '#1f1f1f',
+              muted: '#737373',
+              border: '#e5e5e5',
+              surface: '#f9f9f9',
+              white: '#ffffff'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Tuỳ biến thanh cuộn tối giản */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fafafa;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d4d4d4;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #111111;
+    }
+  </style>
+</head>
+<body class="bg-[#ffffff] text-brand-black font-sans antialiased selection:bg-black selection:text-white min-h-screen flex flex-col justify-between p-6 sm:p-10 md:p-14">
+
+  <!-- Header cực kỳ tối giản: Logo tí hon đóng vai trò kích hoạt bí mật -->
+  <header class="max-w-6xl w-full mx-auto flex items-center justify-between pb-8">
+    <div id="secretLogoTrigger" class="cursor-pointer select-none group flex items-center gap-2.5" title="Mẹo: Gõ phím '0' 10 lần để quản trị">
+      <div class="w-7 h-7 bg-brand-black text-white rounded-full flex items-center justify-center font-bold text-xs tracking-tight transition-transform duration-300 group-hover:scale-105">
+        •
+      </div>
+      <span class="font-bold tracking-tight text-sm text-brand-black uppercase">Đội Ngũ</span>
+    </div>
+
+    <!-- Chỉ số khi gõ số 0 (hiện ra kín đáo khi bắt đầu gõ) -->
+    <div id="easterEggIndicator" class="hidden text-xs font-mono bg-brand-surface border border-brand-border px-2.5 py-1 rounded-full text-brand-muted">
+      0: <span id="keyZeroCount" class="font-bold text-black">0</span>/10
+    </div>
+  </header>
+
+  <!-- Danh sách thành viên (Chỉ chừa lại các thẻ người) -->
+  <main class="max-w-6xl w-full mx-auto flex-1 my-auto">
+    <!-- Grid thẻ thành viên -->
+    <div id="membersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Member cards rendered by JS -->
+    </div>
+
+    <!-- Trạng thái trống nếu chưa có ai -->
+    <div id="emptyState" class="hidden text-center py-20 border border-dashed border-brand-border rounded-2xl bg-brand-surface">
+      <p class="text-sm text-brand-muted">Chưa có thành viên nào. Hãy gõ phím '0' 10 lần để thêm thành viên mới.</p>
+    </div>
+  </main>
+
+  <!-- ================= MODALS & OVERLAYS ================= -->
+
+  <!-- ADMIN MANAGEMENT MODAL -->
+  <div id="adminModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl border border-brand-border w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="adminModalContent">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-5 border-b border-brand-border flex items-center justify-between bg-brand-surface">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-brand-black text-white rounded-lg flex items-center justify-center text-xs">
+            <i class="fa-solid fa-sliders"></i>
+          </div>
+          <div>
+            <h2 class="font-bold text-lg text-black tracking-tight">Hệ Thống Quản Trị Thành Viên</h2>
+            <p class="text-xs text-brand-muted">Chế độ đã mở khóa (Secret 10x '0' Activated)</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openMemberFormModal()" class="px-3.5 py-1.5 text-xs font-semibold bg-brand-black text-white rounded-lg hover:bg-neutral-800 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-plus text-[10px]"></i> Thêm Mới
+          </button>
+          <button onclick="closeAdminModal()" class="w-8 h-8 rounded-lg border border-brand-border hover:bg-neutral-100 flex items-center justify-center text-brand-muted hover:text-black transition">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Sub-bar -->
+      <div class="px-6 py-3 border-b border-brand-border flex items-center justify-between text-xs bg-white">
+        <span class="text-brand-muted">Tổng cộng: <strong id="adminCountText" class="text-black">0</strong> thành viên</span>
+        <div class="flex items-center gap-2">
+          <button onclick="resetToSampleData()" class="px-2.5 py-1 border border-brand-border rounded text-brand-muted hover:text-black hover:border-black transition">
+            <i class="fa-solid fa-rotate-left mr-1"></i> Dữ liệu gốc
+          </button>
+        </div>
+      </div>
+
+      <!-- Members Table in Admin -->
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr class="border-b border-brand-border text-xs uppercase tracking-wider text-brand-muted bg-brand-surface">
+                <th class="p-3 font-semibold">Thành viên</th>
+                <th class="p-3 font-semibold text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="adminTableBody" class="divide-y border-brand-border">
+              <!-- Admin rows will be injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-brand-border flex items-center justify-between bg-brand-surface text-xs text-brand-muted">
+        <span>Tất cả thay đổi được lưu tự động trên trình duyệt này.</span>
+        <button onclick="closeAdminModal()" class="px-4 py-2 font-semibold bg-brand-black text-white rounded-lg hover:bg-neutral-800 transition">
+          Hoàn tất & Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT MEMBER MODAL -->
+  <div id="memberFormModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl border border-brand-border w-full max-w-lg shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="memberFormModalContent">
+      <div class="px-6 py-4 border-b border-brand-border flex items-center justify-between bg-brand-surface">
+        <h3 id="formModalTitle" class="font-bold text-base text-black">Thêm thành viên mới</h3>
+        <button onclick="closeMemberFormModal()" class="w-8 h-8 rounded-lg hover:bg-neutral-200/50 flex items-center justify-center text-brand-muted hover:text-black transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="memberForm" onsubmit="saveMember(event)" class="p-6 space-y-4">
+        <input type="hidden" id="formMemberId">
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-brand-black mb-1.5">Họ và Tên *</label>
+          <input type="text" id="formName" required placeholder="Ví dụ: Trần Anh Khoa" class="w-full px-3.5 py-2 text-sm bg-brand-surface border border-brand-border rounded-lg focus:outline-none focus:border-brand-black">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-brand-black mb-1.5">Đường dẫn ảnh đại diện (URL)</label>
+          <input type="url" id="formAvatar" placeholder="https://images.unsplash.com/..." class="w-full px-3.5 py-2 text-sm bg-brand-surface border border-brand-border rounded-lg focus:outline-none focus:border-brand-black">
+          <p class="text-[11px] text-brand-muted mt-1">Để trống sẽ tự động hiển thị ảnh chữ mặc định.</p>
+        </div>
+
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-brand-border">
+          <button type="button" onclick="closeMemberFormModal()" class="px-4 py-2 text-xs font-semibold border border-brand-border rounded-lg hover:border-black transition">
+            Hủy
+          </button>
+          <button type="submit" class="px-5 py-2 text-xs font-semibold bg-brand-black text-white rounded-lg hover:bg-neutral-800 transition shadow-sm">
+            Lưu Thành Viên
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CUSTOM TOAST NOTIFICATION -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-[70] bg-brand-black text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none text-xs">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-base"></i>
+    <span id="toastMessage">Thông báo</span>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Dữ liệu mẫu khởi tạo khi cơ sở dữ liệu trống
+    const DEFAULT_MEMBERS = [
+      {
+        id: 1,
+        name: "Trần Anh Khoa",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80"
+      },
+      {
+        id: 2,
+        name: "Lê Hoàng Yến",
+        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80"
+      },
+      {
+        id: 3,
+        name: "Phạm Minh Đức",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80"
+      }
+    ];
+
+    // Trạng thái ứng dụng
+    let members = [];
+    const API_URL = "/api/members";
+
+    // Easter Egg Tracker: Nhấn phím '0' 10 lần liên tục
+    let zeroKeyCount = 0;
+    let zeroKeyTimer = null;
+    let logoTapCount = 0;
+    let logoTapTimer = null;
+
+    // Khởi tạo ban đầu
+    window.addEventListener("DOMContentLoaded", () => {
+      fetchMembers();
+      setupEasterEggListener();
+      setupLogoMobileTrigger();
+    });
+
+    // 1. Quản lý dữ liệu qua Cloudflare D1 API (Fallback qua LocalStorage nếu chưa deploy backend)
+    async function fetchMembers() {
+      try {
+        const response = await fetch(API_URL);
+        if (response.ok) {
+          const data = await response.json();
+          members = Array.isArray(data) ? data : [];
+          renderMembers();
+          updateStats();
+          return;
+        }
+      } catch (err) {
+        console.warn("Chưa kết nối API Cloudflare Worker D1, chuyển sang fallback dữ liệu cục bộ.", err);
+      }
+
+      // Fallback cục bộ nếu chạy file offline
+      const stored = localStorage.getItem("core_team_members_d1");
+      if (stored) {
+        try {
+          members = JSON.parse(stored);
+        } catch (e) {
+          members = [...DEFAULT_MEMBERS];
+        }
+      } else {
+        members = [...DEFAULT_MEMBERS];
+        localStorage.setItem("core_team_members_d1", JSON.stringify(members));
+      }
+      renderMembers();
+      updateStats();
+    }
+
+    async function resetToSampleData() {
+      try {
+        for (const item of DEFAULT_MEMBERS) {
+          await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: item.name, avatar: item.avatar })
+          });
+        }
+        await fetchMembers();
+        renderAdminTable();
+        showToast("Đã khôi phục dữ liệu mẫu!", "success");
+      } catch (err) {
+        members = [...DEFAULT_MEMBERS];
+        localStorage.setItem("core_team_members_d1", JSON.stringify(members));
+        renderMembers();
+        renderAdminTable();
+        showToast("Đã khôi phục dữ liệu mẫu cục bộ!", "success");
+      }
+    }
+
+    function updateStats() {
+      const adminCount = document.getElementById("adminCountText");
+      if (adminCount) adminCount.textContent = members.length;
+    }
+
+    // 2. LOGIC EASTER EGG (Spam số 0 10 lần)
+    function setupEasterEggListener() {
+      window.addEventListener("keydown", (e) => {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : "";
+        if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") {
+          return;
+        }
+
+        if (e.key === "0" || e.code === "Digit0" || e.code === "Numpad0") {
+          clearTimeout(zeroKeyTimer);
+          zeroKeyCount++;
+
+          const indicator = document.getElementById("easterEggIndicator");
+          const countSpan = document.getElementById("keyZeroCount");
+          if (indicator && countSpan) {
+            indicator.classList.remove("hidden");
+            countSpan.textContent = zeroKeyCount;
+          }
+
+          if (zeroKeyCount >= 10) {
+            zeroKeyCount = 0;
+            if (indicator) indicator.classList.add("hidden");
+            showToast("Bí mật mở khoá: Chào mừng Quản trị viên!", "admin");
+            openAdminModal();
+          } else {
+            zeroKeyTimer = setTimeout(() => {
+              zeroKeyCount = 0;
+              if (indicator) indicator.classList.add("hidden");
+            }, 3500);
+          }
+        }
+      });
+    }
+
+    // Hỗ trợ cảm ứng trên điện thoại (Tap 10 lần vào logo)
+    function setupLogoMobileTrigger() {
+      const logo = document.getElementById("secretLogoTrigger");
+      if (!logo) return;
+      logo.addEventListener("click", () => {
+        clearTimeout(logoTapTimer);
+        logoTapCount++;
+
+        const indicator = document.getElementById("easterEggIndicator");
+        const countSpan = document.getElementById("keyZeroCount");
+        if (indicator && countSpan) {
+          indicator.classList.remove("hidden");
+          countSpan.textContent = logoTapCount;
+        }
+
+        if (logoTapCount >= 10) {
+          logoTapCount = 0;
+          if (indicator) indicator.classList.add("hidden");
+          showToast("Mở khoá trang chỉnh sửa thành công!", "admin");
+          openAdminModal();
+        } else {
+          logoTapTimer = setTimeout(() => {
+            logoTapCount = 0;
+            if (indicator) indicator.classList.add("hidden");
+          }, 3000);
+        }
+      });
+    }
+
+    // 3. Render giao diện thành viên - Chỉ Tên, Ảnh và Nút
+    function renderMembers() {
+      const grid = document.getElementById("membersGrid");
+      const emptyState = document.getElementById("emptyState");
+      if (!grid) return;
+
+      if (members.length === 0) {
+        grid.innerHTML = "";
+        emptyState.classList.remove("hidden");
+        return;
+      }
+
+      emptyState.classList.add("hidden");
+      grid.innerHTML = members.map(member => {
+        const fallbackImg = `https://placehold.co/600x750/f5f5f5/111111?text=${encodeURIComponent(member.name)}`;
+
+        return `
+          <article class="group relative bg-white border border-brand-border rounded-2xl overflow-hidden hover:border-brand-black transition-all duration-300 flex flex-col justify-between hover:shadow-[0_12px_32px_rgba(0,0,0,0.06)]">
+            <!-- Ảnh đại diện cỡ lớn -->
+            <div class="relative w-full aspect-[4/4.5] overflow-hidden bg-brand-surface border-b border-brand-border">
+              <img 
+                src="${member.avatar || fallbackImg}" 
+                alt="${member.name}" 
+                onerror="this.src='${fallbackImg}'"
+                class="w-full h-full object-cover object-center grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500 ease-out"
+                loading="lazy"
+              >
+            </div>
+
+            <!-- Tên Tối Giản -->
+            <div class="p-5 flex items-center justify-center">
+              <h3 class="text-base sm:text-lg font-bold tracking-tight text-brand-black text-center truncate">
+                ${member.name}
+              </h3>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    // 4. Quản trị: Hiển thị bảng & Xử lý Admin Modal
+    function openAdminModal() {
+      renderAdminTable();
+      const modal = document.getElementById("adminModal");
+      const content = document.getElementById("adminModalContent");
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        modal.classList.remove("opacity-0");
+        content.classList.remove("scale-95");
+      }, 10);
+    }
+
+    function closeAdminModal() {
+      const modal = document.getElementById("adminModal");
+      const content = document.getElementById("adminModalContent");
+      modal.classList.add("opacity-0");
+      content.classList.add("scale-95");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 300);
+    }
+
+    function renderAdminTable() {
+      const tbody = document.getElementById("adminTableBody");
+      if (!tbody) return;
+
+      if (members.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" class="p-8 text-center text-brand-muted">Chưa có ai. Bấm "Thêm Mới" để tạo.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = members.map(m => `
+        <tr class="hover:bg-brand-surface transition-colors">
+          <td class="p-3">
+            <div class="flex items-center gap-3">
+              <img src="${m.avatar || 'https://placehold.co/80x80/111/fff?text=Avatar'}" class="w-10 h-10 rounded-full object-cover border border-brand-border" onerror="this.src='https://placehold.co/80x80/111/fff?text=Avatar'">
+              <div>
+                <p class="font-bold text-black text-sm">${m.name}</p>
+              </div>
+            </div>
+          </td>
+          <td class="p-3 text-right space-x-1">
+            <button onclick="editMember('${m.id}')" class="px-2.5 py-1 rounded border border-brand-border hover:border-black text-xs font-semibold text-black transition">
+              <i class="fa-regular fa-pen-to-square mr-1"></i> Sửa
+            </button>
+            <button onclick="deleteMember('${m.id}')" class="px-2.5 py-1 rounded bg-black text-white hover:bg-red-600 transition text-xs font-semibold">
+              <i class="fa-regular fa-trash-can mr-1"></i> Xoá
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    // 5. Thêm & Chỉnh Sửa Thành Viên (Gọi API D1)
+    function openMemberFormModal(memberId = null) {
+      const modal = document.getElementById("memberFormModal");
+      const content = document.getElementById("memberFormModalContent");
+      const title = document.getElementById("formModalTitle");
+      const form = document.getElementById("memberForm");
+
+      form.reset();
+      document.getElementById("formMemberId").value = "";
+
+      if (memberId) {
+        const member = members.find(m => String(m.id) === String(memberId));
+        if (member) {
+          title.textContent = "Chỉnh sửa thành viên";
+          document.getElementById("formMemberId").value = member.id;
+          document.getElementById("formName").value = member.name || "";
+          document.getElementById("formAvatar").value = member.avatar || "";
+        }
+      } else {
+        title.textContent = "Thêm thành viên mới";
+      }
+
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        modal.classList.remove("opacity-0");
+        content.classList.remove("scale-95");
+      }, 10);
+    }
+
+    function closeMemberFormModal() {
+      const modal = document.getElementById("memberFormModal");
+      const content = document.getElementById("memberFormModalContent");
+      modal.classList.add("opacity-0");
+      content.classList.add("scale-95");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 300);
+    }
+
+    async function saveMember(e) {
+      e.preventDefault();
+      const id = document.getElementById("formMemberId").value;
+      const name = document.getElementById("formName").value.trim();
+      const avatar = document.getElementById("formAvatar").value.trim();
+
+      if (!name) {
+        showToast("Vui lòng nhập Họ và Tên!", "error");
+        return;
+      }
+
+      try {
+        if (id) {
+          // Cập nhật thành viên
+          const res = await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, avatar })
+          });
+          if (res.ok) {
+            showToast(`Đã cập nhật "${name}"`, "success");
+          } else {
+            throw new Error();
+          }
+        } else {
+          // Tạo mới thành viên
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, avatar })
+          });
+          if (res.ok) {
+            showToast(`Đã thêm "${name}"!`, "success");
+          } else {
+            throw new Error();
+          }
+        }
+        await fetchMembers();
+      } catch (err) {
+        // Fallback lưu local nếu chưa nối D1 Worker
+        if (id) {
+          const index = members.findIndex(m => String(m.id) === String(id));
+          if (index !== -1) members[index] = { ...members[index], name, avatar };
+        } else {
+          members.unshift({ id: Date.now(), name, avatar });
+        }
+        localStorage.setItem("core_team_members_d1", JSON.stringify(members));
+        renderMembers();
+        showToast(`Đã lưu "${name}" (chế độ dự phòng)!`, "success");
+      }
+
+      renderAdminTable();
+      closeMemberFormModal();
+    }
+
+    function editMember(id) {
+      openMemberFormModal(id);
+    }
+
+    async function deleteMember(id) {
+      const target = members.find(m => String(m.id) === String(id));
+      const memberName = target ? target.name : "thành viên này";
+      
+      showCustomConfirm(`Bạn có chắc muốn xóa "${memberName}" khỏi cơ sở dữ liệu?`, async () => {
+        try {
+          const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+          if (!res.ok) throw new Error();
+          await fetchMembers();
+          showToast(`Đã xoá ${memberName}`, "info");
+        } catch (err) {
+          members = members.filter(m => String(m.id) !== String(id));
+          localStorage.setItem("core_team_members_d1", JSON.stringify(members));
+          renderMembers();
+          showToast(`Đã xoá ${memberName} (chế độ dự phòng)`, "info");
+        }
+        renderAdminTable();
+      });
+    }
+
+    // Modal xác nhận không dùng confirm()
+    function showCustomConfirm(message, onConfirm) {
+      const existing = document.getElementById("customConfirmModal");
+      if (existing) existing.remove();
+
+      const modalHtml = `
+        <div id="customConfirmModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-[80] flex items-center justify-center p-4">
+          <div class="bg-white border border-brand-border rounded-xl p-6 max-w-sm w-full shadow-2xl">
+            <h4 class="font-bold text-base text-black mb-2">Xác nhận xóa</h4>
+            <p class="text-xs text-brand-muted mb-6 leading-relaxed">${message}</p>
+            <div class="flex items-center justify-end gap-3">
+              <button id="cancelConfirmBtn" class="px-3.5 py-1.5 text-xs font-semibold border border-brand-border rounded-lg hover:border-black transition">
+                Hủy
+              </button>
+              <button id="okConfirmBtn" class="px-4 py-1.5 text-xs font-semibold bg-brand-black text-white rounded-lg hover:bg-neutral-800 transition">
+                Đồng ý
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      const confirmElem = document.getElementById("customConfirmModal");
+
+      document.getElementById("cancelConfirmBtn").onclick = () => confirmElem.remove();
+      document.getElementById("okConfirmBtn").onclick = () => {
+        confirmElem.remove();
+        onConfirm();
+      };
+    }
+
+    // 6. Toast Notification thay cho alert()
+    function showToast(message, type = "success") {
+      const toast = document.getElementById("toastNotification");
+      const msg = document.getElementById("toastMessage");
+      const icon = document.getElementById("toastIcon");
+
+      msg.textContent = message;
+      if (type === "admin") {
+        icon.className = "fa-solid fa-unlock-keyhole text-amber-400";
+      } else if (type === "error") {
+        icon.className = "fa-solid fa-triangle-exclamation text-rose-400";
+      } else {
+        icon.className = "fa-solid fa-circle-check text-emerald-400";
+      }
+
+      toast.classList.remove("translate-y-20", "opacity-0");
+      setTimeout(() => {
+        toast.classList.add("translate-y-20", "opacity-0");
+      }, 3200);
+    }
+  </script>
+</body>
+</html>
